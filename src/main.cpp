@@ -1,88 +1,105 @@
-// ｽﾀｯｸﾁｬﾝ ステップ1: CoreS3 の画面に顔を表示する
-//  - 何もしなくても、まばたきと呼吸の動きを続ける
-//  - 画面をタッチすると表情が切り替わり、セリフを話す
+// 平安俳句ｽﾀｯｸﾁｬﾝ
+//  - 平安顔（引目鉤鼻・置眉）の Avatar を表示する
+//  - 画面をタッチすると、ずんだもんの声でセリフを順に話す（口パク付き）
+//  音声: VOICEVOX:ずんだもん（tools/gen_voices.py で生成して埋め込み）
 #include <M5Unified.h>
 #include <Avatar.h>
+#include "HeianFace.h"
+#include "voice_table.h"
 
 using namespace m5avatar;
 
-Avatar avatar;
+// platformio.ini の board_build.embed_files で埋め込んだ音声データ
+extern const uint8_t voicesStart[] asm("_binary_assets_voices_bin_start");
+extern const uint8_t voicesEnd[] asm("_binary_assets_voices_bin_end");
 
-struct Mood {
-  Expression expression;
-  const char* text;
-};
+Avatar* avatar;
+const int16_t* pcm = nullptr;  // 全セリフの PCM（2バイト境界にそろえたもの）
 
-// 吹き出しのフォントは英数字のみ対応なので、セリフはローマ字にしている
-const Mood moods[] = {
-  {Expression::Neutral, "Hello!"},
-  {Expression::Happy,   "Yay!"},
-  {Expression::Sleepy,  "Zzz..."},
-  {Expression::Doubt,   "Hmm?"},
-  {Expression::Sad,     "Sad..."},
-  {Expression::Angry,   "Grr!"},
-};
-const int moodCount = sizeof(moods) / sizeof(moods[0]);
-int moodIndex = 0;
-uint32_t speechUntil = 0;
+int clipIndex = -1;
+const VoiceClip* speaking = nullptr;  // 再生中のセリフ
+uint32_t speakStartMs = 0;
+float mouth = 0;
 
-void showMood(int index) {
-  avatar.setExpression(moods[index].expression);
-  avatar.setSpeechText(moods[index].text);
-  speechUntil = millis() + 2000;
+void setupVoice() {
+  const size_t bytes = voicesEnd - voicesStart;
+  if (reinterpret_cast<uintptr_t>(voicesStart) % 2 == 0) {
+    pcm = reinterpret_cast<const int16_t*>(voicesStart);
+  } else {  // 境界がずれていたら PSRAM にコピーして使う
+    auto* buf = static_cast<int16_t*>(ps_malloc(bytes));
+    memcpy(buf, voicesStart, bytes);
+    pcm = buf;
+  }
+  Serial.printf("voices: %u bytes, %d clips\n", (unsigned)bytes, kVoiceClipCount);
+
+  M5.Speaker.begin();
+  M5.Speaker.setVolume(180);
+}
+
+void speak(int index) {
+  const VoiceClip& clip = kVoiceClips[index];
+  M5.Speaker.stop();
+  M5.Speaker.playRaw(pcm + clip.offset, clip.samples, kVoiceSampleRate, false, 1, 0, true);
+  avatar->setExpression(clip.expression);
+  avatar->setSpeechText(clip.caption);
+  speaking = &clip;
+  speakStartMs = millis();
+  Serial.printf("speak: %s\n", clip.id);
+}
+
+// 再生位置の前後 20ms の音量から口の開きを決める
+float mouthFromVoice() {
+  const uint32_t pos = (uint64_t)(millis() - speakStartMs) * kVoiceSampleRate / 1000;
+  if (pos >= speaking->samples) return 0;
+  constexpr uint32_t kWindow = kVoiceSampleRate / 50;
+  const int16_t* p = pcm + speaking->offset + pos;
+  const uint32_t n = std::min(kWindow, speaking->samples - pos);
+  uint32_t sum = 0;
+  for (uint32_t i = 0; i < n; ++i) sum += abs(p[i]);
+  const float level = (float)sum / n / 2000.0f;  // 2000 は経験値（ずんだもんの声の上位1割でほぼ全開）
+  return std::min(1.0f, level);
 }
 
 void setup() {
   auto cfg = M5.config();
-  cfg.serial_baudrate = 115200;  // 0のままだとSerial.beginされずログが出ない
+  cfg.serial_baudrate = 115200;
   M5.begin(cfg);
   M5.Display.setBrightness(128);
-  Serial.println("Stack-chan step1 start");
+  Serial.println("Heian Stack-chan start");
 
-  avatar.init();  // まばたき・呼吸のアニメーションは内部タスクが自動で動かす
-  avatar.setBatteryIcon(true);
-  showMood(moodIndex);
-}
+  avatar = new Avatar(heian::createFace());
+  avatar->setColorPalette(heian::createPalette());
+  avatar->setSpeechFont(&fonts::lgfxJapanGothic_12);
+  avatar->init(16);  // 16bit カラー（紅や頬紅を出すため）
 
-// バッテリーの状態を画面のアイコンとシリアルに出す
-void updateBattery() {
-  static uint32_t nextCheck = 0;
-  if (millis() < nextCheck) return;
-  nextCheck = millis() + 2000;
-
-  int32_t level = M5.Power.getBatteryLevel();      // 残量 [%]
-  int16_t vbat = M5.Power.getBatteryVoltage();     // バッテリー電圧 [mV]
-  int32_t current = M5.Power.getBatteryCurrent();  // 充電なら正、放電なら負 [mA]
-  int16_t vbus = M5.Power.getVBUSVoltage();        // USBからの入力電圧 [mV]
-  auto charging = M5.Power.isCharging();
-
-  const char* state = charging == m5::Power_Class::is_charging      ? "charging"
-                    : charging == m5::Power_Class::is_discharging   ? "discharging"
-                                                                    : "unknown";
-  Serial.printf("battery: %d%% %dmV %dmA vbus=%dmV state=%s\n",
-                level, vbat, current, vbus, state);
-  avatar.setBatteryStatus(charging == m5::Power_Class::is_charging, level);
+  setupVoice();
+  delay(500);
+  clipIndex = 0;
+  speak(clipIndex);
 }
 
 void loop() {
   M5.update();
-  updateBattery();
 
   if (M5.Touch.getDetail().wasPressed()) {
-    moodIndex = (moodIndex + 1) % moodCount;
-    showMood(moodIndex);
-    Serial.printf("mood: %s\n", moods[moodIndex].text);
+    clipIndex = (clipIndex + 1) % kVoiceClipCount;
+    speak(clipIndex);
   }
 
-  // 吹き出しは2秒で消す
-  if (speechUntil != 0 && millis() > speechUntil) {
-    avatar.setSpeechText("");
-    speechUntil = 0;
+  float target = 0;
+  if (speaking) {
+    if (M5.Speaker.isPlaying()) {
+      target = mouthFromVoice();
+    } else {  // 話し終わったら少し間をおいて字幕と表情を戻す
+      if (millis() - speakStartMs > speaking->samples * 1000 / kVoiceSampleRate + 800) {
+        speaking = nullptr;
+        avatar->setSpeechText("");
+        avatar->setExpression(Expression::Neutral);
+      }
+    }
   }
-
-  // 口をゆっくりパクパクさせて「生きている感」を出す（AI会話では音声に合わせる）
-  float t = millis() / 1000.0f;
-  avatar.setMouthOpenRatio(speechUntil ? (sinf(t * 12.0f) + 1.0f) * 0.4f : 0.0f);
+  mouth += (target - mouth) * 0.5f;  // 急に開閉しないようならす
+  avatar->setMouthOpenRatio(mouth);
 
   delay(20);
 }

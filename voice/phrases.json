@@ -1,0 +1,14 @@
+{
+  "speaker": 3,
+  "speaker_name": "ずんだもん（ノーマル）",
+  "sample_rate": 16000,
+  "speed": 1.05,
+  "phrases": [
+    {"id": "greet",    "expression": "Happy",   "caption": "こんにちはなのだ！", "text": "こんにちはなのだ！ボクは、つきびとスタックチャンなのだ。"},
+    {"id": "ask",      "expression": "Neutral", "caption": "一句ほしいのだ",     "text": "一句、聞かせてほしいのだ！"},
+    {"id": "praise",   "expression": "Happy",   "caption": "素敵な句なのだ！",   "text": "とっても素敵な句なのだ！"},
+    {"id": "writing",  "expression": "Sleepy",  "caption": "書いてるのだ…",     "text": "いま、短冊に書いているのだ。ちょっと待つのだ。"},
+    {"id": "give",     "expression": "Happy",   "caption": "どうぞなのだ！",     "text": "できたのだ！持って帰ってほしいのだ！"},
+    {"id": "paperout", "expression": "Sad",     "caption": "紙切れなのだ…",     "text": "うわっ、紙がなくなっちゃったのだ…"}
+  ]
+}
