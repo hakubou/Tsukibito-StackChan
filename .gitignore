@@ -1,0 +1,13 @@
+# PlatformIO のビルド成果物・ダウンロードしたライブラリ
+.pio/
+
+# エディタ
+.vscode/
+!.vscode/extensions.json
+
+# macOS
+.DS_Store
+
+# 秘密情報（Wi-Fi パスワードや AI の API キーはここに書いてコミットしない）
+include/secrets.h
+*.env
