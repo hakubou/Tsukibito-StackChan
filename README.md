@@ -11,6 +11,7 @@
 - [docs/concept.md](docs/concept.md) — 全体構想（体験の流れ・ハード/ソフト構成・開発ステップ）
 - [docs/decoration.md](docs/decoration.md) — 装飾の詳細設計（衣装・顔・調度品・短冊デザイン・部品表）
 - [docs/enclosure.md](docs/enclosure.md) — 筐体設計（A1 mini で印刷する部品・布の型紙・組み立て順）
+- [docs/software.md](docs/software.md) — ソフトウェア構成（接客の流れ・ゲーム連携API・実装の順番）
 
 ## 機材
 - M5Stack CoreS3 + Feetech SCS0009 ×2（パン/チルト）
