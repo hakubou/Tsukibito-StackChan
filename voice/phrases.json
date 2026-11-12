@@ -1,14 +1,14 @@
 {
-  "speaker": 3,
-  "speaker_name": "ずんだもん（ノーマル）",
+  "speaker": 42,
+  "speaker_name": "ちび式じい（ノーマル）",
   "sample_rate": 16000,
-  "speed": 1.05,
+  "speed": 1.0,
   "phrases": [
-    {"id": "greet",    "expression": "Happy",   "caption": "こんにちはなのだ！", "text": "こんにちはなのだ！ボクは、つきびとスタックチャンなのだ。"},
-    {"id": "ask",      "expression": "Neutral", "caption": "一句ほしいのだ",     "text": "一句、聞かせてほしいのだ！"},
-    {"id": "praise",   "expression": "Happy",   "caption": "素敵な句なのだ！",   "text": "とっても素敵な句なのだ！"},
-    {"id": "writing",  "expression": "Sleepy",  "caption": "書いてるのだ…",     "text": "いま、短冊に書いているのだ。ちょっと待つのだ。"},
-    {"id": "give",     "expression": "Happy",   "caption": "どうぞなのだ！",     "text": "できたのだ！持って帰ってほしいのだ！"},
-    {"id": "paperout", "expression": "Sad",     "caption": "紙切れなのだ…",     "text": "うわっ、紙がなくなっちゃったのだ…"}
+    {"id": "greet",    "expression": "Happy",   "caption": "ようこそじゃ",       "text": "ほっほっほ、ようこそおいでなすった。わしは、つきびとスタックチャンじゃ。"},
+    {"id": "ask",      "expression": "Neutral", "caption": "一句聞かせてくだされ", "text": "どれ、一句、聞かせてくだされ。"},
+    {"id": "praise",   "expression": "Happy",   "caption": "見事な句じゃ",       "text": "ほう、これは見事な句じゃのう！"},
+    {"id": "writing",  "expression": "Sleepy",  "caption": "したためておる",     "text": "いま、短冊にしたためておるでな。しばし待たれよ。"},
+    {"id": "give",     "expression": "Happy",   "caption": "どうぞじゃ",         "text": "できたぞい。どうぞ、持って帰ってくだされ。"},
+    {"id": "paperout", "expression": "Sad",     "caption": "紙切れじゃ",         "text": "おや、紙が切れてしもうたわい…"}
   ]
 }

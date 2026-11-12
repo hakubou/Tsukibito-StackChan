@@ -30,7 +30,7 @@
 
 ## ファームウェア
 - 平安顔の Avatar（[src/HeianFace.h](src/HeianFace.h)）：引目鉤鼻・置眉・紅の口・頬紅
-- 画面をタッチすると、ずんだもんの声でセリフを順に話す（音量に合わせて口パク）
+- 画面をタッチすると、ちび式じいの声でセリフを順に話す（音量に合わせて口パク）
 
 ```bash
 pio run -t upload
@@ -48,7 +48,7 @@ python3 tools/gen_voices.py
 3. 書き込み直す
 
 ## クレジット
-- 音声：**VOICEVOX:ずんだもん**（[VOICEVOX](https://voicevox.hiroshiba.jp/)）。展示や公開の際もこの表記を入れること
+- 音声：**VOICEVOX:ちび式じい**（[VOICEVOX](https://voicevox.hiroshiba.jp/)）。展示や公開の際もこの表記を入れること
 - 3Dモデル：ｽﾀｯｸﾁｬﾝ タカオ版（Apache 2.0、`cad/reference/takao/LICENSE`）
 
 ## フォルダ構成

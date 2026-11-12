@@ -1,8 +1,9 @@
 // 平安俳句ｽﾀｯｸﾁｬﾝ
 //  - 平安顔（引目鉤鼻・置眉）を表示する（HeianFace.h の独自描画）
 //  - 内蔵カメラで顔を検出し、その方向へ瞳を向ける（S0：カメラの試作）
-//  - 画面をタッチすると、ずんだもんの声でセリフを順に話す（口パク付き）
-//  音声: VOICEVOX:ずんだもん（tools/gen_voices.py で生成して埋め込み）
+//  - 画面をタッチすると、ちび式じいの声でセリフを順に話す（口パク付き）
+//  - シリアルに s を送ると、カメラ画像を1枚 base64 で出す（デバッグ用）
+//  音声: VOICEVOX:ちび式じい（tools/gen_voices.py で生成して埋め込み）
 #include <M5Unified.h>
 #include "HeianFace.h"
 #include "voice_table.h"
@@ -57,7 +58,7 @@ float mouthFromVoice() {
   const uint32_t n = std::min(kWindow, speaking->samples - pos);
   uint32_t sum = 0;
   for (uint32_t i = 0; i < n; ++i) sum += abs(p[i]);
-  const float level = (float)sum / n / 2000.0f;  // 2000 は経験値（ずんだもんの声の上位1割でほぼ全開）
+  const float level = (float)sum / n / 3200.0f;  // 3200 は経験値（ちび式じいの声の上位1割でほぼ全開）
   return std::min(1.0f, level);
 }
 
@@ -113,10 +114,21 @@ void loop() {
   reportStats();
   followFace();
 
+  if (Serial.available() && Serial.read() == 's') face_sensor::dumpSnapshot();
+
   if (M5.Touch.getDetail().wasPressed()) {
     Serial.println("touch");
     clipIndex = (clipIndex + 1) % kVoiceClipCount;
     speak(clipIndex);
+  }
+
+  // 顔を見つけている間は笑顔にする（検出できているかが画面で分かるように）
+  static bool smiling = false;
+  const auto f = face_sensor::get();
+  const bool seen = f.count > 0 && millis() - f.atMs < 1000;
+  if (!speaking && seen != smiling) {
+    smiling = seen;
+    face.setExpr(seen ? heian::Expr::Happy : heian::Expr::Neutral);
   }
 
   float target = 0;

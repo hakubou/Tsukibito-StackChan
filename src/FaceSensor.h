@@ -24,6 +24,11 @@ inline Result latest;
 inline SemaphoreHandle_t lock = nullptr;
 inline volatile uint32_t intervalMs = 200;  // 検出の間隔（負荷調整用）
 inline volatile bool paused = false;
+// デバッグ用：撮影画像を1枚だけ取り出す（RAM上に一時コピーするだけで、保存はしない）
+inline uint8_t* snapBuf = nullptr;
+inline volatile bool snapRequested = false, snapReady = false;
+inline size_t snapLen = 0;
+inline int snapW = 0, snapH = 0;
 
 inline void task(void*) {
   HumanFaceDetectMSR01 stage1(0.1F, 0.5F, 10, 0.2F);
@@ -32,6 +37,13 @@ inline void task(void*) {
     if (paused) { vTaskDelay(pdMS_TO_TICKS(100)); continue; }
     camera_fb_t* fb = esp_camera_fb_get();
     if (!fb) { vTaskDelay(pdMS_TO_TICKS(100)); continue; }
+    if (snapRequested) {
+      if (!snapBuf) snapBuf = (uint8_t*)ps_malloc(fb->len);
+      memcpy(snapBuf, fb->buf, fb->len);
+      snapLen = fb->len; snapW = fb->width; snapH = fb->height;
+      snapRequested = false;
+      snapReady = true;
+    }
     const uint32_t t0 = millis();
     std::vector<int> shape = {(int)fb->height, (int)fb->width, 3};
     auto& candidates = stage1.infer((uint16_t*)fb->buf, shape);
@@ -105,6 +117,31 @@ inline Result get() {
   r = detail::latest;
   xSemaphoreGive(detail::lock);
   return r;
+}
+
+// 撮影画像を1枚シリアルに出す（"SNAP w h len" の行 → base64 → "END"）
+inline void dumpSnapshot() {
+  detail::snapReady = false;
+  detail::snapRequested = true;
+  const uint32_t t0 = millis();
+  while (!detail::snapReady && millis() - t0 < 2000) delay(10);
+  if (!detail::snapReady) { Serial.println("SNAP failed"); return; }
+  Serial.printf("SNAP %d %d %u\n", detail::snapW, detail::snapH, (unsigned)detail::snapLen);
+  static const char* b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  char line[77];
+  int n = 0;
+  for (size_t i = 0; i < detail::snapLen; i += 3) {
+    uint32_t v = detail::snapBuf[i] << 16;
+    if (i + 1 < detail::snapLen) v |= detail::snapBuf[i + 1] << 8;
+    if (i + 2 < detail::snapLen) v |= detail::snapBuf[i + 2];
+    line[n++] = b64[(v >> 18) & 63];
+    line[n++] = b64[(v >> 12) & 63];
+    line[n++] = i + 1 < detail::snapLen ? b64[(v >> 6) & 63] : '=';
+    line[n++] = i + 2 < detail::snapLen ? b64[v & 63] : '=';
+    if (n == 76) { line[n] = 0; Serial.println(line); n = 0; }
+  }
+  if (n) { line[n] = 0; Serial.println(line); }
+  Serial.println("END");
 }
 
 inline void setInterval(uint32_t ms) { detail::intervalMs = ms; }

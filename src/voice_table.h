@@ -1,5 +1,5 @@
 // tools/gen_voices.py が自動生成。手で編集しないこと
-// 音声: VOICEVOX:ずんだもん（ノーマル）
+// 音声: VOICEVOX:ちび式じい（ノーマル）
 #pragma once
 #include "HeianFace.h"
 
@@ -14,11 +14,11 @@ struct VoiceClip {
 };
 
 const VoiceClip kVoiceClips[] = {
-  {"greet", "こんにちはなのだ！", heian::Expr::Happy, 0, 67584},
-  {"ask", "一句ほしいのだ", heian::Expr::Neutral, 67584, 40789},
-  {"praise", "素敵な句なのだ！", heian::Expr::Happy, 108373, 29525},
-  {"writing", "書いてるのだ…", heian::Expr::Sleepy, 137898, 61269},
-  {"give", "どうぞなのだ！", heian::Expr::Happy, 199167, 45739},
-  {"paperout", "紙切れなのだ…", heian::Expr::Sad, 244906, 44715},
+  {"greet", "ようこそじゃ", heian::Expr::Happy, 0, 103083},
+  {"ask", "一句聞かせてくだされ", heian::Expr::Neutral, 103083, 54101},
+  {"praise", "見事な句じゃ", heian::Expr::Happy, 157184, 46421},
+  {"writing", "したためておる", heian::Expr::Sleepy, 203605, 80725},
+  {"give", "どうぞじゃ", heian::Expr::Happy, 284330, 70656},
+  {"paperout", "紙切れじゃ", heian::Expr::Sad, 354986, 50688},
 };
 constexpr int kVoiceClipCount = sizeof(kVoiceClips) / sizeof(kVoiceClips[0]);
