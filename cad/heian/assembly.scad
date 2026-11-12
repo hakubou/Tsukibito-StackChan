@@ -33,4 +33,4 @@ translate([desk_xy[0], desk_xy[1], MAT_H]) {
 }
 
 translate([0, 105, 0]) for (i = [0 : 3]) translate([(i - 1.5) * 60 * cos(25), (i % 2) * 60 * sin(25), 0])
-  rotate([0, 0, (i % 2 == 0) ? 25 : -25]) color([0.1, 0.1, 0.1]) panel();
+  rotate([0, 0, (i % 2 == 0) ? 25 : -25]) panel();

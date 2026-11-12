@@ -18,9 +18,11 @@ module rail() {
 }
 
 module panel() {
-  rail();
-  translate([0, 0, 2 * RAIL_H + ROD_LEN - 2 * SOCKET_DEPTH]) mirror([0, 0, 1]) rail();
-  for (s = [1, -1]) translate([s * (PANEL_W / 2 - ROD_INSET) - ROD / 2, -ROD / 2, RAIL_H - SOCKET_DEPTH]) cube([ROD, ROD, ROD_LEN]);
+  color("goldenrod") {
+    rail();
+    translate([0, 0, 2 * RAIL_H + ROD_LEN - 2 * SOCKET_DEPTH]) mirror([0, 0, 1]) rail();
+    for (s = [1, -1]) translate([s * (PANEL_W / 2 - ROD_INSET) - ROD / 2, -ROD / 2, RAIL_H - SOCKET_DEPTH]) cube([ROD, ROD, ROD_LEN]);
+  }
   color("ivory", 0.9) translate([-PANEL_W / 2, -RAIL_T / 2 - 0.5, RAIL_H]) cube([PANEL_W, 0.3, ROD_LEN - 2 * SOCKET_DEPTH]);
 }
 
@@ -29,5 +31,5 @@ else if (part == "plate") for (i = [0 : 7]) translate([0, i * (RAIL_T + 4), 0]) 
 else {
   // ジグザグに開いた状態
   for (i = [0 : 3]) translate([(i - 1.5) * PANEL_W * cos(25), (i % 2) * PANEL_W * sin(25), 0])
-    rotate([0, 0, (i % 2 == 0) ? 25 : -25]) color("black") panel();
+    rotate([0, 0, (i % 2 == 0) ? 25 : -25]) panel();
 }
