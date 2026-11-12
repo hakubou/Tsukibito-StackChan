@@ -6,6 +6,7 @@
 ## ドキュメント
 - [docs/concept.md](docs/concept.md) — 全体構想（体験の流れ・ハード/ソフト構成・開発ステップ）
 - [docs/decoration.md](docs/decoration.md) — 装飾の詳細設計（衣装・顔・調度品・短冊デザイン・部品表）
+- [docs/enclosure.md](docs/enclosure.md) — 筐体設計（A1 mini で印刷する部品・布の型紙・組み立て順）
 
 ## 機材
 - M5Stack CoreS3 + Feetech SCS0009 ×2（パン/チルト）
@@ -42,4 +43,4 @@ python3 tools/gen_voices.py
 - `assets/` … 埋め込み用の音声データ（自動生成）
 - `src/` … ファームウェア（`~/Desktop/StackChan` のステップ1から派生）
 - `cad/reference/takao/` … ｽﾀｯｸﾁｬﾝ takao 版 STL（参照用・ライセンスは同梱 LICENSE に従う）
-- `cad/`（今後）… 烏帽子・文机カバーなどのオリジナル部品
+- `cad/heian/` … オリジナル部品の OpenSCAD モデル・STL・プレビュー画像

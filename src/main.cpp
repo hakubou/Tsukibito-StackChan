@@ -41,10 +41,9 @@ void speak(int index) {
   M5.Speaker.stop();
   M5.Speaker.playRaw(pcm + clip.offset, clip.samples, kVoiceSampleRate, false, 1, 0, true);
   avatar->setExpression(clip.expression);
-  avatar->setSpeechText(clip.caption);
   speaking = &clip;
   speakStartMs = millis();
-  Serial.printf("speak: %s\n", clip.id);
+  Serial.printf("speak: %s (%s)\n", clip.id, clip.caption);
 }
 
 // 再生位置の前後 20ms の音量から口の開きを決める
@@ -69,7 +68,6 @@ void setup() {
 
   avatar = new Avatar(heian::createFace());
   avatar->setColorPalette(heian::createPalette());
-  avatar->setSpeechFont(&fonts::lgfxJapanGothic_12);
   avatar->init(16);  // 16bit カラー（紅や頬紅を出すため）
 
   setupVoice();
@@ -90,10 +88,9 @@ void loop() {
   if (speaking) {
     if (M5.Speaker.isPlaying()) {
       target = mouthFromVoice();
-    } else {  // 話し終わったら少し間をおいて字幕と表情を戻す
+    } else {  // 話し終わったら少し間をおいて表情を戻す
       if (millis() - speakStartMs > speaking->samples * 1000 / kVoiceSampleRate + 800) {
         speaking = nullptr;
-        avatar->setSpeechText("");
         avatar->setExpression(Expression::Neutral);
       }
     }
