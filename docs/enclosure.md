@@ -3,7 +3,7 @@
 Bambu Lab **A1 mini（造形サイズ 180×180×180mm）** で全部品が印刷できるように設計した。
 モデルはすべて OpenSCAD のパラメトリックモデル（[cad/heian/](../cad/heian/)）。寸法を変えるときは各 `.scad` の先頭にある数値を直して、STL を書き出し直す。
 
-![全体](../cad/heian/preview/assembly.png)
+![全体](images/concept.png)
 
 ## 1. 構造の考え方
 

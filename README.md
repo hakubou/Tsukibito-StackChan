@@ -3,7 +3,7 @@
 サークル制作の俳句ゲームのイベントで、来場者の一句を**短冊にして手渡す**付き人ロボット。
 平安装束のｽﾀｯｸﾁｬﾝが文机に向かい、ミニ感熱プリンタで短冊を「したためて」献上する。
 
-![完成イメージ](cad/heian/preview/assembly.png)
+![完成イメージ](docs/images/concept.png)
 
 *完成イメージ（3Dモデルのレンダリング。ｽﾀｯｸﾁｬﾝ本体は箱で代用、装束の布は未表現）*
 
@@ -17,6 +17,15 @@
 - 感熱プリンタ: BluwieBroka S1（84×84×43mm、57mm紙、203dpi、BLE、アプリ「Luck Jingle」）
   - ⚠ ESP32 から BLE で直接制御できるかは未検証（プロトコル解析が必要）、Amazonで適当に調べて一番上に出ただけだからより良いものがあればそれにするかも
 - 3Dプリンタ
+
+## 顔
+『源氏物語絵巻』の**引目鉤鼻**（細い線の目と「く」の字の鼻）に、額の高い位置の**置眉**、紅の小さな口、頬紅を合わせた平安顔（[src/HeianFace.h](src/HeianFace.h)）。
+
+![平安顔](docs/images/face.png)
+
+![表情一覧](docs/images/face_expressions.png)
+
+*CoreS3 の画面（320×240）と同じ座標・色で描き出したイメージ（[tools/render_face.py](tools/render_face.py)）*
 
 ## ファームウェア
 - 平安顔の Avatar（[src/HeianFace.h](src/HeianFace.h)）：引目鉤鼻・置眉・紅の口・頬紅
