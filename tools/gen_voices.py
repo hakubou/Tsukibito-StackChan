@@ -63,14 +63,14 @@ def main():
         "// tools/gen_voices.py が自動生成。手で編集しないこと",
         f'// 音声: VOICEVOX:{cfg["speaker_name"]}',
         "#pragma once",
-        "#include <Avatar.h>",
+        "#include \"HeianFace.h\"",
         "",
         f"constexpr uint32_t kVoiceSampleRate = {cfg['sample_rate']};",
         "",
         "struct VoiceClip {",
         "  const char* id;",
         "  const char* caption;",
-        "  m5avatar::Expression expression;",
+        "  heian::Expr expression;",
         "  uint32_t offset;   // voices.bin 先頭からのサンプル位置",
         "  uint32_t samples;  // サンプル数",
         "};",
@@ -79,7 +79,7 @@ def main():
     ]
     for p, off, n in rows:
         lines.append(f'  {{{c_str(p["id"])}, {c_str(p["caption"])}, '
-                     f'm5avatar::Expression::{p["expression"]}, {off}, {n}}},')
+                     f'heian::Expr::{p["expression"]}, {off}, {n}}},')
     lines += ["};", "constexpr int kVoiceClipCount = sizeof(kVoiceClips) / sizeof(kVoiceClips[0]);", ""]
     (ROOT / "src/voice_table.h").write_text("\n".join(lines), encoding="utf-8")
     print(f"total {len(blob) / 1024:.0f} KB -> assets/voices.bin, src/voice_table.h")
