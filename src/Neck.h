@@ -1,6 +1,7 @@
 // 首（Feetech SCS0009 ×2）を動かす
-//  - 半二重シリアル：TX=G17 → ショットキーダイオード → SIG ← RX=G18、SIG は 1kΩ で 3.3V にプルアップ
-//    （docs/neck_wiring.md。回路は StackChan/docs/servo_board.md と同じ）
+//  - 半二重シリアル（Port A / Grove）：TX=G2 → 1kΩ → SIG ← RX=G1（直結）
+//    送信していない間は TX が 3.3V を出しているので、1kΩ 越しにプルアップの代わりになる
+//    （Port A には 3.3V のピンがないため。配線は docs/neck_wiring.html）
 //  - 自分の送信がそのまま RX に返ってくる（エコー）ので読み捨てる
 //  - 電源のコンデンサがない構成でも電圧が落ち込みにくいよう、動きには必ず時間をかけ、
 //    急な全速移動はしない（最低 kMinMoveMs）
@@ -10,7 +11,7 @@
 
 namespace neck {
 
-constexpr int kTxPin = 17, kRxPin = 18;
+constexpr int kTxPin = 2, kRxPin = 1;  // Port A：黄＝G2、白＝G1
 constexpr uint32_t kBaud = 1000000;
 constexpr uint8_t kPanId = 1, kTiltId = 2;
 
@@ -109,7 +110,7 @@ inline float tilt() { return detail::tiltDeg; }
 
 // 起動：2個のサーボを探してトルクを入れ、ゆっくり正面へ
 inline bool begin() {
-  M5.Power.setExtOutput(true);  // M-Bus の 5V を出す
+  M5.Power.setExtOutput(true);  // Port A（Grove）の 5V を出す
   detail::bus.begin(kBaud, SERIAL_8N1, kRxPin, kTxPin);
   delay(50);
   const int p1 = readPos(kPanId), p2 = readPos(kTiltId);
