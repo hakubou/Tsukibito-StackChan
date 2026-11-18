@@ -3,11 +3,13 @@
 //  - 内蔵カメラで顔を検出し、その方向へ瞳を向ける（S0：カメラの試作）
 //  - 画面をタッチすると、ちび式じいの声でセリフを順に話す（口パク付き）
 //  - シリアルに s を送ると、カメラ画像を1枚 base64 で出す（デバッグ用）
+//  - 首（SCS0009×2）：シリアルのコマンドで動作確認（c 正面 / l 左 / r 右 / u 上 / b お辞儀 / n 頷き / a 見渡す / p 位置を読む）
 //  音声: VOICEVOX:ちび式じい（tools/gen_voices.py で生成して埋め込み）
 #include <M5Unified.h>
 #include "HeianFace.h"
 #include "voice_table.h"
 #include "FaceSensor.h"
+#include "Neck.h"
 
 // platformio.ini の board_build.embed_files で埋め込んだ音声データ
 extern const uint8_t voicesStart[] asm("_binary_assets_voices_bin_start");
@@ -47,6 +49,23 @@ void speak(int index) {
   speaking = &clip;
   speakStartMs = millis();
   Serial.printf("speak: %s (%s)\n", clip.id, clip.caption);
+  if (strcmp(clip.id, "give") == 0) neck::play(neck::Motion::Bow);  // 手渡しのセリフではお辞儀
+}
+
+// シリアルの1文字コマンド（首の動作確認・カメラ画像の取り出し）
+void handleSerial() {
+  if (!Serial.available()) return;
+  switch (Serial.read()) {
+    case 's': face_sensor::dumpSnapshot(); break;
+    case 'c': neck::look(0, 0); break;
+    case 'l': neck::look(30, 0); break;
+    case 'r': neck::look(-30, 0); break;
+    case 'u': neck::look(0, -10); break;
+    case 'b': neck::play(neck::Motion::Bow); break;
+    case 'n': neck::play(neck::Motion::Nod); break;
+    case 'a': neck::play(neck::Motion::LookAround); break;
+    case 'p': Serial.printf("neck pos: pan=%d tilt=%d\n", neck::readPos(neck::kPanId), neck::readPos(neck::kTiltId)); break;
+  }
 }
 
 // 再生位置の前後 20ms の音量から口の開きを決める
@@ -104,6 +123,7 @@ void setup() {
   const bool cam = false;
 #endif
   Serial.printf("camera: %s\n", cam ? "ok" : "NG");
+  Serial.printf("neck: %s\n", neck::begin() ? "ok" : "servo not found");
   delay(500);
   clipIndex = 0;
   speak(clipIndex);
@@ -114,7 +134,8 @@ void loop() {
   reportStats();
   followFace();
 
-  if (Serial.available() && Serial.read() == 's') face_sensor::dumpSnapshot();
+  handleSerial();
+  neck::update();
 
   if (M5.Touch.getDetail().wasPressed()) {
     Serial.println("touch");

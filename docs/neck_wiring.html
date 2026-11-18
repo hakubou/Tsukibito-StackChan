@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>首サーボのブレッドボード配線</title>
+<style>
+  :root { --ink:#222; --muted:#666; --line:#ddd; --bg:#fff; --card:#faf8f4; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Hiragino Sans","Noto Sans JP",sans-serif; line-height:1.7; }
+  main { max-width:820px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  h2 { font-size:17px; margin:32px 0 8px; border-left:4px solid #b8343f; padding-left:8px; }
+  p.lead { color:var(--muted); margin:0 0 16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px; }
+  svg { width:100%; height:auto; display:block; }
+  table { border-collapse:collapse; width:100%; font-size:14px; }
+  th, td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+  th { background:#f2efe8; }
+  .sw { display:inline-block; width:12px; height:12px; border-radius:2px; vertical-align:-1px; margin-right:4px; border:1px solid #0003; }
+  .warn { background:#fdf3e7; border:1px solid #f0c48a; border-radius:8px; padding:10px 12px; }
+  ol li, ul li { margin:4px 0; }
+  code { background:#f2efe8; padding:1px 5px; border-radius:4px; }
+  pre { background:#f2efe8; padding:10px 12px; border-radius:8px; overflow-x:auto; font-size:13px; line-height:1.5; }
+</style>
+</head>
+<body>
+<main>
+<h1>首サーボ（SCS0009×2）のブレッドボード配線</h1>
+<p class="lead">中継基板の代わりに、ブレッドボードで同じ回路を組む。部品はショットキーダイオード1本と1kΩ抵抗1本だけ（コンデンサなし）。ファームウェアは <code>src/Neck.h</code>。</p>
+
+<h2>ブレッドボード上の配置</h2>
+<div class="card">
+<svg viewBox="0 0 720 600" role="img" aria-label="ブレッドボード配線図">
+  <defs>
+    <pattern id="holes" width="20" height="20" patternUnits="userSpaceOnUse"><rect x="8" y="8" width="4" height="4" fill="#bdb6a8"/></pattern>
+  </defs>
+
+  <!-- CoreS3 M-Bus -->
+  <rect x="50" y="8" width="320" height="48" rx="6" fill="#3a3a3a"/>
+  <text x="210" y="24" fill="#fff" font-size="12" text-anchor="middle">CoreS3 M-Bus（背面のピンソケット）</text>
+  <g font-size="11" fill="#fff" text-anchor="middle">
+    <text x="70" y="44">5V</text><text x="94" y="44">GND</text><text x="150" y="44">G17</text><text x="230" y="44">G18</text><text x="330" y="44">3V3</text>
+  </g>
+  <g fill="#d9b24c"><circle cx="70" cy="56" r="4"/><circle cx="90" cy="56" r="4"/><circle cx="150" cy="56" r="4"/><circle cx="230" cy="56" r="4"/><circle cx="330" cy="56" r="4"/></g>
+
+  <!-- ブレッドボード本体 -->
+  <rect x="50" y="80" width="620" height="356" rx="10" fill="#f4f1ea" stroke="#d6d0c4"/>
+  <!-- 電源レール（上） -->
+  <line x1="60" y1="91" x2="660" y2="91" stroke="#d33" stroke-width="2"/>
+  <line x1="60" y1="127" x2="660" y2="127" stroke="#36c" stroke-width="2"/>
+  <text x="56" y="104" font-size="12" fill="#d33" text-anchor="end">+</text>
+  <text x="56" y="122" font-size="14" fill="#36c" text-anchor="end">−</text>
+  <rect x="60" y="90" width="600" height="40" fill="url(#holes)"/>
+  <!-- 本体の穴 -->
+  <rect x="60" y="150" width="600" height="100" fill="url(#holes)"/>
+  <rect x="60" y="270" width="600" height="100" fill="url(#holes)"/>
+  <rect x="60" y="252" width="600" height="16" fill="#e8e3d8"/>
+  <!-- 電源レール（下） -->
+  <line x1="60" y1="383" x2="660" y2="383" stroke="#d33" stroke-width="2"/>
+  <line x1="60" y1="419" x2="660" y2="419" stroke="#36c" stroke-width="2"/>
+  <rect x="60" y="382" width="600" height="40" fill="url(#holes)"/>
+  <text x="56" y="396" font-size="12" fill="#d33" text-anchor="end">+</text>
+  <text x="56" y="414" font-size="14" fill="#36c" text-anchor="end">−</text>
+  <!-- 行・列の目印 -->
+  <g font-size="10" fill="#999" text-anchor="middle">
+    <text x="70" y="146">1</text><text x="150" y="146">5</text><text x="230" y="146">9</text><text x="330" y="146">14</text><text x="410" y="146">18</text><text x="530" y="146">24</text><text x="650" y="146">30</text>
+  </g>
+  <g font-size="10" fill="#999" text-anchor="end">
+    <text x="58" y="164">a</text><text x="58" y="184">b</text><text x="58" y="204">c</text><text x="58" y="224">d</text><text x="58" y="244">e</text>
+    <text x="58" y="284">f</text><text x="58" y="304">g</text><text x="58" y="324">h</text><text x="58" y="344">i</text><text x="58" y="364">j</text>
+  </g>
+
+  <!-- CoreS3 からの線 -->
+  <g stroke-width="4" stroke-linecap="round" fill="none">
+    <path d="M70 56 V100" stroke="#e03131"/>
+    <path d="M90 56 V120" stroke="#222"/>
+    <path d="M150 56 V160" stroke="#f2c200"/>
+    <path d="M230 56 V160" stroke="#2f9e44"/>
+    <path d="M330 56 V160" stroke="#f08c00"/>
+  </g>
+
+  <!-- D1 ショットキー：c5（カソード＝帯）〜 c9（アノード） -->
+  <g>
+    <line x1="150" y1="200" x2="230" y2="200" stroke="#888" stroke-width="2"/>
+    <rect x="168" y="193" width="44" height="14" rx="3" fill="#222"/>
+    <rect x="171" y="193" width="6" height="14" fill="#ccc"/>
+    <circle cx="150" cy="200" r="3" fill="#888"/><circle cx="230" cy="200" r="3" fill="#888"/>
+  </g>
+  <!-- R1 1kΩ：d9 〜 d14（茶・黒・赤・金） -->
+  <g>
+    <line x1="230" y1="220" x2="330" y2="220" stroke="#888" stroke-width="2"/>
+    <rect x="258" y="213" width="44" height="14" rx="6" fill="#e6c99a"/>
+    <rect x="265" y="213" width="4" height="14" fill="#7a4a1c"/>
+    <rect x="273" y="213" width="4" height="14" fill="#111"/>
+    <rect x="281" y="213" width="4" height="14" fill="#d22"/>
+    <rect x="292" y="213" width="4" height="14" fill="#c8a24a"/>
+    <circle cx="230" cy="220" r="3" fill="#888"/><circle cx="330" cy="220" r="3" fill="#888"/>
+  </g>
+
+  <!-- SIG を J1・J2 へ（白） -->
+  <g stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round">
+    <path d="M230 240 C 300 240, 430 250, 450 280"/>
+    <path d="M230 180 C 330 180, 540 180, 570 280"/>
+  </g>
+  <g stroke="#7b5ea7" stroke-width="3.5" fill="none" stroke-linecap="round">
+    <path d="M230 240 C 300 240, 430 250, 450 280"/>
+    <path d="M230 180 C 330 180, 540 180, 570 280"/>
+  </g>
+
+  <!-- 上下のレールをつなぐ -->
+  <g stroke-width="4" stroke-linecap="round" fill="none">
+    <path d="M650 100 V392" stroke="#e03131"/>
+    <path d="M630 120 V412" stroke="#222"/>
+  </g>
+
+  <!-- J1：h18 GND / h19 5V / h20 SIG、J2：h24 / h25 / h26 -->
+  <g>
+    <rect x="400" y="312" width="60" height="16" rx="2" fill="#222"/>
+    <rect x="520" y="312" width="60" height="16" rx="2" fill="#222"/>
+    <g fill="#d9b24c"><rect x="407" y="316" width="6" height="8"/><rect x="427" y="316" width="6" height="8"/><rect x="447" y="316" width="6" height="8"/>
+      <rect x="527" y="316" width="6" height="8"/><rect x="547" y="316" width="6" height="8"/><rect x="567" y="316" width="6" height="8"/></g>
+    <g font-size="9" fill="#555" text-anchor="middle">
+      <text x="410" y="308">GND</text><text x="430" y="308">5V</text><text x="450" y="308">SIG</text>
+      <text x="530" y="308">GND</text><text x="550" y="308">5V</text><text x="570" y="308">SIG</text>
+    </g>
+    <text x="388" y="324" font-size="12" font-weight="bold" text-anchor="end">J1</text>
+    <text x="508" y="324" font-size="12" font-weight="bold" text-anchor="end">J2</text>
+  </g>
+  <!-- J の GND・5V をレールへ -->
+  <g stroke-width="4" stroke-linecap="round" fill="none">
+    <path d="M410 360 V412" stroke="#222"/>
+    <path d="M430 360 V392" stroke="#e03131"/>
+    <path d="M530 360 V412" stroke="#222"/>
+    <path d="M550 360 V392" stroke="#e03131"/>
+  </g>
+
+  <!-- サーボのケーブル -->
+  <g fill="none" stroke-width="2.5">
+    <path d="M410 328 C 410 470, 420 480, 425 500" stroke="#222"/>
+    <path d="M430 328 C 430 470, 435 480, 440 500" stroke="#d33"/>
+    <path d="M450 328 C 450 470, 452 480, 455 500" stroke="#aaa"/>
+    <path d="M530 328 C 530 470, 560 480, 565 500" stroke="#222"/>
+    <path d="M550 328 C 550 470, 578 480, 580 500" stroke="#d33"/>
+    <path d="M570 328 C 570 470, 592 480, 595 500" stroke="#aaa"/>
+  </g>
+  <rect x="380" y="500" width="120" height="56" rx="8" fill="#e9ecf5" stroke="#9aa3bf"/>
+  <text x="440" y="522" font-size="12" text-anchor="middle">サーボ1</text>
+  <text x="440" y="540" font-size="11" fill="#555" text-anchor="middle">首の左右・ID 1</text>
+  <rect x="520" y="500" width="120" height="56" rx="8" fill="#e9ecf5" stroke="#9aa3bf"/>
+  <text x="580" y="522" font-size="12" text-anchor="middle">サーボ2</text>
+  <text x="580" y="540" font-size="11" fill="#555" text-anchor="middle">首の上下・ID 2</text>
+
+  <!-- 部品のラベル -->
+  <g font-size="11" fill="#333">
+    <text x="160" y="276" text-anchor="start">↑ D1 ショットキー（帯＝G17側）</text>
+    <text x="256" y="208" text-anchor="start" font-size="10">R1 1kΩ ↓</text>
+  </g>
+  <text x="60" y="470" font-size="12" fill="#333">9列目（a〜e）が信号線 SIG のつなぎ目：</text>
+  <text x="60" y="488" font-size="12" fill="#333">G18・D1・R1・J1・J2 の SIG がここに集まる</text>
+</svg>
+</div>
+
+<h2>つなぐ場所の一覧</h2>
+<table>
+  <tr><th>線・部品</th><th>一方の端</th><th>もう一方の端</th></tr>
+  <tr><td><span class="sw" style="background:#e03131"></span>5V</td><td>M-Bus 5V</td><td>上の ＋ レール</td></tr>
+  <tr><td><span class="sw" style="background:#222"></span>GND</td><td>M-Bus GND</td><td>上の − レール</td></tr>
+  <tr><td><span class="sw" style="background:#f2c200"></span>TX</td><td>M-Bus G17</td><td>a5</td></tr>
+  <tr><td><span class="sw" style="background:#2f9e44"></span>RX</td><td>M-Bus G18</td><td>a9</td></tr>
+  <tr><td><span class="sw" style="background:#f08c00"></span>3.3V</td><td>M-Bus 3V3</td><td>a14</td></tr>
+  <tr><td>D1 ショットキー</td><td><b>c5（帯のある側＝カソード）</b></td><td>c9（アノード）</td></tr>
+  <tr><td>R1 1kΩ（向きなし）</td><td>d9</td><td>d14</td></tr>
+  <tr><td><span class="sw" style="background:#7b5ea7"></span>SIG → J1</td><td>e9</td><td>f20</td></tr>
+  <tr><td><span class="sw" style="background:#7b5ea7"></span>SIG → J2</td><td>b9</td><td>f26</td></tr>
+  <tr><td>J1（3ピンヘッダ）</td><td colspan="2">h18 GND ／ h19 5V ／ h20 SIG</td></tr>
+  <tr><td>J2（3ピンヘッダ）</td><td colspan="2">h24 GND ／ h25 5V ／ h26 SIG</td></tr>
+  <tr><td>J の電源</td><td colspan="2">j18・j24 → 下の − レール、j19・j25 → 下の ＋ レール</td></tr>
+  <tr><td>レールの橋渡し</td><td colspan="2">30列目あたりで、上の ＋ と下の ＋、上の − と下の − をそれぞれつなぐ（ハーフサイズのボードは上下のレールが別々のため）</td></tr>
+</table>
+
+<h2>回路図</h2>
+<pre>
+                         3V3 (M-Bus)
+                           │
+                         [R1 1kΩ]       誰も送信していないとき SIG を 1 にする
+                           │
+ G17 (TX) ────|◀───────────●──────────┬──── SIG ─ J1 サーボ1（首の左右, ID 1）
+          D1 ショットキー    │          └──── SIG ─ J2 サーボ2（首の上下, ID 2）
+          （帯は G17 側）    │
+ G18 (RX) ─────────────────┘
+
+ 5V  (M-Bus) ────────────────────────── +5V ─ J1・J2
+ GND (M-Bus) ────────────────────────── GND ─ J1・J2
+                              （C1・C2 100µF は今回なし）
+</pre>
+
+<h2>組む前の確認</h2>
+<ol>
+  <li><b>ダイオードの向き</b>：帯（カソード）を G17 側（5列目）に。逆にすると送信できない</li>
+  <li><b>サーボのコネクタの向き</b>：J1・J2 は左から GND／5V／SIG に並べた。サーボのケーブルの色（黒＝GND、赤＝5V）とピンの並びを見て、<b>黒が GND（18・24列）に来る</b>ように挿す。5V は真ん中なので、逆に挿しても壊れにくいが動かない</li>
+  <li><b>3V3 と 5V を取り違えない</b>：プルアップ（R1）は必ず 3V3 へ。5V につなぐと G18 に 5V がかかる</li>
+  <li><b>電源を入れる前に</b>：サーボの首はゆっくり正面へ動く（起動時に1.5秒かける）ので、手で押さえないこと</li>
+</ol>
+
+<div class="warn">
+  <b>コンデンサがないことへの対策</b><br>
+  サーボが動き出す瞬間に電流が増え、CoreS3 が再起動することがある。ファームウェアでは、どんな動きにも最低 0.25 秒かけ、速さに上限（毎秒120°）を付け、起動時は2個をずらして動かしている。<br>
+  それでも再起動する場合は、サーボの ＋ レールを USB 充電器などの別の 5V から取り、<b>GND だけ CoreS3 とつなぐ</b>（M-Bus の 5V はレールから外す）。
+</div>
+
+<h2>動作確認</h2>
+<p>書き込み後、シリアルモニタ（115200bps）で1文字ずつ送る。</p>
+<table>
+  <tr><th>キー</th><th>動き</th></tr>
+  <tr><td><code>p</code></td><td>2個の現在位置を読む（両方 0〜1023 の値が出れば配線OK。<code>-1</code> はそのサーボと通信できていない）</td></tr>
+  <tr><td><code>c</code> / <code>l</code> / <code>r</code> / <code>u</code></td><td>正面 ／ 左 30° ／ 右 30° ／ 少し上</td></tr>
+  <tr><td><code>b</code> / <code>n</code> / <code>a</code></td><td>お辞儀 ／ 頷き ／ 見渡す</td></tr>
+</table>
+<p>左右や上下が逆なら、<code>src/Neck.h</code> の <code>kPanDir</code>・<code>kTiltDir</code> を <code>-1</code> にする。正面がずれていれば <code>kPanCenter</code>・<code>kTiltCenter</code>（初期値 512）を直す。</p>
+</main>
+</body>
+</html>
