@@ -4,6 +4,7 @@
 //  - 画面をタッチすると、ちび式じいの声でセリフを順に話す（口パク付き）
 //  - シリアルに s を送ると、カメラ画像を1枚 base64 で出す（デバッグ用）
 //  - 首（SCS0009×2）：シリアルのコマンドで動作確認（c 正面 / l 左 / r 右 / u 上 / b お辞儀 / n 頷き / a 見渡す / p 位置を読む）
+//    ID：i 探す / I2 つながっている1個を ID 2 に書き換える（サーボは1個だけつなぐ）
 //  音声: VOICEVOX:ちび式じい（tools/gen_voices.py で生成して埋め込み）
 #include <M5Unified.h>
 #include "HeianFace.h"
@@ -52,10 +53,34 @@ void speak(int index) {
   if (strcmp(clip.id, "give") == 0) neck::play(neck::Motion::Bow);  // 手渡しのセリフではお辞儀
 }
 
-// シリアルの1文字コマンド（首の動作確認・カメラ画像の取り出し）
+// ID の確認（i）と書き換え（I<新ID>、強制は F<新ID>）。サーボは1個だけつなぐこと
+void idCommand(char cmd) {
+  int found[8];
+  const int n = neck::scan(found, 8);
+  Serial.printf("id scan: %d found", n);
+  for (int i = 0; i < n; ++i) Serial.printf(" [%d]", found[i]);
+  Serial.println();
+  if (cmd == 'i') return;
+
+  const int newId = Serial.parseInt();  // I や F の後ろの数字
+  if (newId < 1 || newId > 253) { Serial.println("id: new ID must be 1-253"); return; }
+  if (cmd == 'I') {
+    if (n != 1) { Serial.println("id: connect exactly ONE servo (use F<id> only if reading fails)"); return; }
+    if (found[0] == newId) { Serial.printf("id: already %d\n", newId); return; }
+    const bool ok = neck::changeId(found[0], newId);
+    Serial.printf("id: %d -> %d %s\n", found[0], newId, ok ? "OK" : "NG (no reply with new ID)");
+  } else {  // F：返事が読めないときの最終手段。ブロードキャストで書き換える
+    const bool ok = neck::changeId(neck::kBroadcastId, newId);
+    Serial.printf("id: broadcast -> %d %s\n", newId, ok ? "OK" : "sent (reply not readable)");
+  }
+}
+
+// シリアルの1文字コマンド（首の動作確認・ID書き換え・カメラ画像の取り出し）
 void handleSerial() {
   if (!Serial.available()) return;
-  switch (Serial.read()) {
+  const char c = Serial.read();
+  if (c == 'i' || c == 'I' || c == 'F') { idCommand(c); return; }
+  switch (c) {
     case 's': face_sensor::dumpSnapshot(); break;
     case 'c': neck::look(0, 0); break;
     case 'l': neck::look(30, 0); break;

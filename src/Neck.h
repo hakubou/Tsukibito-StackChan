@@ -28,7 +28,8 @@ constexpr uint32_t kMinMoveMs = 250;              // どんな小さな動きで
 constexpr float kMaxDegPerSec = 120;              // 速さの上限
 
 // SCS0009 のレジスタ（SCS プロトコル、2バイト値はビッグエンディアン）
-constexpr uint8_t kRegTorque = 0x28, kRegGoalPos = 0x2A, kRegPresentPos = 0x38;
+constexpr uint8_t kRegId = 0x05, kRegTorque = 0x28, kRegGoalPos = 0x2A, kRegLock = 0x30, kRegPresentPos = 0x38;
+constexpr uint8_t kBroadcastId = 0xFE;
 constexpr uint8_t kInstRead = 0x02, kInstWrite = 0x03;
 
 namespace detail {
@@ -91,6 +92,31 @@ inline int readPos(uint8_t id) {
   uint8_t r[8];
   if (!detail::transact(id, kInstRead, p, 2, r, 8)) return -1;  // FF FF ID 04 ERR H L SUM
   return (r[5] << 8) | r[6];
+}
+
+// ---- ID の確認と書き換え（サーボを1個だけつないだ状態で使う） ----
+
+// ID 0〜maxId で現在位置が読めるサーボを探す。見つかった数を返す
+inline int scan(int* found, int cap, int maxId = 20) {
+  int n = 0;
+  for (int id = 0; id <= maxId; ++id) {
+    if (readPos(id) >= 0 && n < cap) found[n++] = id;
+    delay(2);
+  }
+  return n;
+}
+
+// oldId のサーボを newId に書き換える（EEPROM のロックを外して書き、ロックし直す）
+// oldId に kBroadcastId を指定すると、IDが分からなくても「つながっている全部」に送る
+inline bool changeId(uint8_t oldId, uint8_t newId) {
+  const uint8_t unlock = 0, lock = 1;
+  detail::writeReg(oldId, kRegLock, &unlock, 1);
+  delay(50);
+  detail::writeReg(oldId, kRegId, &newId, 1);
+  delay(50);
+  detail::writeReg(newId, kRegLock, &lock, 1);
+  delay(50);
+  return readPos(newId) >= 0;
 }
 
 // 指定の角度へ ms かけて動かす（速さの上限を超える場合は自動でゆっくりにする）
