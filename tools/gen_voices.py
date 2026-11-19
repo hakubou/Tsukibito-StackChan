@@ -7,7 +7,10 @@
 
 使い方:
   docker run --rm -d -p 127.0.0.1:50021:50021 --name voicevox voicevox/voicevox_engine:cpu-latest
-  python3 tools/gen_voices.py
+  python3 tools/gen_voices.py               # 埋め込み用のファイルを作る
+  python3 tools/gen_voices.py --wav DIR     # あわせて1セリフずつ WAV を DIR に書き出す（聞いて確かめる用）
+
+category：同じ category のセリフから、ファームウェアがランダムに1つ選んで話す
 """
 import io
 import json
@@ -47,6 +50,9 @@ def c_str(s):
 
 
 def main():
+    wav_dir = Path(sys.argv[sys.argv.index("--wav") + 1]) if "--wav" in sys.argv else None
+    if wav_dir:
+        wav_dir.mkdir(parents=True, exist_ok=True)
     cfg = json.loads((ROOT / "voice/phrases.json").read_text(encoding="utf-8"))
     blob = bytearray()
     rows = []
@@ -54,6 +60,9 @@ def main():
         pcm = synth(p["text"], cfg)
         rows.append((p, len(blob) // 2, len(pcm) // 2))
         blob += pcm
+        if wav_dir:
+            with wave.open(str(wav_dir / f'{p["id"]}.wav'), "wb") as w:
+                w.setnchannels(1); w.setsampwidth(2); w.setframerate(cfg["sample_rate"]); w.writeframes(pcm)
         print(f'{p["id"]:10s} {len(pcm) / 2 / cfg["sample_rate"]:5.2f}s  {p["text"]}')
 
     (ROOT / "assets").mkdir(exist_ok=True)
@@ -69,6 +78,7 @@ def main():
         "",
         "struct VoiceClip {",
         "  const char* id;",
+        "  const char* category;  // 同じ category からランダムに選ぶ",
         "  const char* caption;",
         "  heian::Expr expression;",
         "  uint32_t offset;   // voices.bin 先頭からのサンプル位置",
@@ -78,7 +88,7 @@ def main():
         "const VoiceClip kVoiceClips[] = {",
     ]
     for p, off, n in rows:
-        lines.append(f'  {{{c_str(p["id"])}, {c_str(p["caption"])}, '
+        lines.append(f'  {{{c_str(p["id"])}, {c_str(p.get("category", p["id"]))}, {c_str(p["caption"])}, '
                      f'heian::Expr::{p["expression"]}, {off}, {n}}},')
     lines += ["};", "constexpr int kVoiceClipCount = sizeof(kVoiceClips) / sizeof(kVoiceClips[0]);", ""]
     (ROOT / "src/voice_table.h").write_text("\n".join(lines), encoding="utf-8")

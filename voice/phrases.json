@@ -3,12 +3,37 @@
   "speaker_name": "ちび式じい（ノーマル）",
   "sample_rate": 16000,
   "speed": 1.0,
+  "note": "平安VR「掬って，詠んで，恋をして」の付き人（市橋さんの案 11/19 をもとに）。category ごとにランダムで 1 つ選ぶ。attract＝誰も遊んでいないときの呼び込み、watch＝遊んでいる人がいるときの呼び込み（game_start が届いたとき）、greet＝顔を見つけたとき、pet＝画面を撫でたとき、kokoro/tashinami/nashi＝PC から game_end が届いたとき（verdict で分ける）→ 続けて praise → 刷り上がったころに printed。text は VOICEVOX が読み間違える語をかなにしてある",
   "phrases": [
-    {"id": "greet",    "expression": "Happy",   "caption": "ようこそじゃ",       "text": "ほっほっほ、ようこそおいでなすった。わしは、つきびとスタックチャンじゃ。"},
-    {"id": "ask",      "expression": "Neutral", "caption": "一句聞かせてくだされ", "text": "どれ、一句、聞かせてくだされ。"},
-    {"id": "praise",   "expression": "Happy",   "caption": "見事な句じゃ",       "text": "ほう、これは見事な句じゃのう！"},
-    {"id": "writing",  "expression": "Sleepy",  "caption": "したためておる",     "text": "いま、短冊にしたためておるでな。しばし待たれよ。"},
-    {"id": "give",     "expression": "Happy",   "caption": "どうぞじゃ",         "text": "できたぞい。どうぞ、持って帰ってくだされ。"},
-    {"id": "paperout", "expression": "Sad",     "caption": "紙切れじゃ",         "text": "おや、紙が切れてしもうたわい…"}
+    {"id": "attract1", "category": "attract", "expression": "Happy",   "caption": "垣間見していかれよ", "text": "そこを行くお方、ちと、かいまみしていかれよ。"},
+    {"id": "attract2", "category": "attract", "expression": "Happy",   "caption": "恋の歌を贈ってみぬか", "text": "ひめぎみに、恋の歌を贈ってみぬか？"},
+    {"id": "attract3", "category": "attract", "expression": "Neutral", "caption": "平安の恋の入り口じゃ", "text": "ここは、平安の恋の入り口じゃ。ほっほっほ。"},
+    {"id": "attract4", "category": "attract", "expression": "Happy",   "caption": "筆と木簡で歌を詠む", "text": "筆と木簡で、和歌を詠めるのじゃ。どうじゃ、やってみんか。"},
+
+    {"id": "watch1",   "category": "watch",   "expression": "Neutral", "caption": "いま歌を詠んでおられる", "text": "いま、ひめぎみに贈る歌を、詠んでおられるところじゃ。"},
+    {"id": "watch2",   "category": "watch",   "expression": "Happy",   "caption": "次はそなたの番じゃ", "text": "次は、そなたの番じゃ。しばし待たれよ。"},
+    {"id": "watch3",   "category": "watch",   "expression": "Happy",   "caption": "言葉を掬っておる", "text": "ほれ、筆で、言葉をすくっておるぞ。"},
+
+    {"id": "greet1",   "category": "greet",   "expression": "Happy",   "caption": "恋のお相手をお探しかな", "text": "おや、そこのお方。恋のお相手を、お探しかな？"},
+    {"id": "greet2",   "category": "greet",   "expression": "Happy",   "caption": "ようこそじゃ", "text": "ほっほっほ、ようこそおいでなすった。わしは、つきびとじゃ。"},
+
+    {"id": "kokoro1",  "category": "kokoro",  "expression": "Happy",   "caption": "想いが届いたようじゃ", "text": "おお、想いが届いたようじゃ！めでたいのう。"},
+    {"id": "kokoro2",  "category": "kokoro",  "expression": "Happy",   "caption": "姫君の心も動いた", "text": "姫君の心も、動いたようじゃのう。"},
+
+    {"id": "tashinami1", "category": "tashinami", "expression": "Doubt", "caption": "手ごわいのう", "text": "ほっほ、姫君は、なかなか手ごわいのう。"},
+    {"id": "tashinami2", "category": "tashinami", "expression": "Neutral", "caption": "返事が来ただけ上出来", "text": "たしなめられたか。じゃが、返事が来ただけ、上出来じゃ。"},
+
+    {"id": "nashi1",   "category": "nashi",   "expression": "Sad",     "caption": "恋とはそういうものじゃ", "text": "返事は、こなんだか。恋とは、そういうものじゃ。"},
+    {"id": "nashi2",   "category": "nashi",   "expression": "Sad",     "caption": "次こそは", "text": "残念じゃったのう。また来なされ、次こそは。"},
+
+    {"id": "praise1",  "category": "praise",  "expression": "Happy",   "caption": "よい歌じゃった", "text": "それにしても、よい歌じゃったのう。"},
+    {"id": "praise2",  "category": "praise",  "expression": "Happy",   "caption": "みやびな歌じゃ", "text": "なかなか、みやびな歌じゃった。わしも感心したわい。"},
+
+    {"id": "printed1", "category": "printed", "expression": "Happy",   "caption": "紙を取ってくだされ", "text": "ほれ、歌が刷り上がったぞい。紙を、取ってくだされ。"},
+    {"id": "printed2", "category": "printed", "expression": "Happy",   "caption": "持ってお帰りなされ", "text": "歌を紙にしたためたぞい。忘れずに、持ってお帰りなされ。"},
+
+    {"id": "pet1",     "category": "pet",     "expression": "Happy",   "caption": "くすぐったいわい", "text": "これこれ、くすぐったいわい。"},
+    {"id": "pet2",     "category": "pet",     "expression": "Neutral", "caption": "烏帽子がずれる", "text": "これ、えぼしが、ずれてしまうではないか。"},
+    {"id": "pet3",     "category": "pet",     "expression": "Sleepy",  "caption": "気持ちがよいのう", "text": "ほっほっほ、気持ちがよいのう。"}
   ]
 }

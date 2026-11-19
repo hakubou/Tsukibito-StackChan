@@ -190,6 +190,7 @@ inline void play(Motion m) {
   detail::baseTilt = detail::tiltDeg;
 }
 inline bool busy() { return detail::motion != Motion::None; }
+inline void stop() { detail::motion = Motion::None; }  // 決まった動きを途中でやめる（首はその場で止まる）
 
 inline void update() {
   using namespace detail;
