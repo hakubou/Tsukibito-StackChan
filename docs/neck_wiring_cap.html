@@ -128,18 +128,18 @@
 
   <!-- C1・C2：下の ＋ レール（21・27列）と − レールにまたがって立てる。上から見た図 -->
   <g>
-    <line x1="470" y1="392" x2="470" y2="412" stroke="#888" stroke-width="2"/>
-    <line x1="590" y1="392" x2="590" y2="412" stroke="#888" stroke-width="2"/>
-    <circle cx="470" cy="402" r="11" fill="#1f3f8f" stroke="#0d2050"/>
-    <path d="M459 402 A11 11 0 0 0 481 402 Z" fill="#cfd5e6"/>
-    <text x="470" y="411" font-size="9" fill="#1f3f8f" text-anchor="middle" font-weight="bold">−</text>
-    <text x="470" y="399" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">+</text>
-    <circle cx="590" cy="402" r="11" fill="#1f3f8f" stroke="#0d2050"/>
-    <path d="M579 402 A11 11 0 0 0 601 402 Z" fill="#cfd5e6"/>
-    <text x="590" y="411" font-size="9" fill="#1f3f8f" text-anchor="middle" font-weight="bold">−</text>
-    <text x="590" y="399" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">+</text>
-    <text x="488" y="400" font-size="10" fill="#222">C1</text>
-    <text x="608" y="400" font-size="10" fill="#222">C2</text>
+    <circle cx="470" cy="392" r="3" fill="#888"/><circle cx="470" cy="412" r="3" fill="#888"/>
+    <circle cx="590" cy="392" r="3" fill="#888"/><circle cx="590" cy="412" r="3" fill="#888"/>
+    <circle cx="470" cy="402" r="16" fill="#1f3f8f" stroke="#0d2050" stroke-width="1.5"/>
+    <path d="M454 402 A16 16 0 0 0 486 402 Z" fill="#cfd5e6"/>
+    <text x="470" y="398" font-size="13" fill="#fff" text-anchor="middle" font-weight="bold">+</text>
+    <text x="470" y="414" font-size="13" fill="#1f3f8f" text-anchor="middle" font-weight="bold">−</text>
+    <circle cx="590" cy="402" r="16" fill="#1f3f8f" stroke="#0d2050" stroke-width="1.5"/>
+    <path d="M574 402 A16 16 0 0 0 606 402 Z" fill="#cfd5e6"/>
+    <text x="590" y="398" font-size="13" fill="#fff" text-anchor="middle" font-weight="bold">+</text>
+    <text x="590" y="414" font-size="13" fill="#1f3f8f" text-anchor="middle" font-weight="bold">−</text>
+    <text x="489" y="407" font-size="12" fill="#1f3f8f" font-weight="bold">C1</text>
+    <text x="609" y="407" font-size="12" fill="#1f3f8f" font-weight="bold">C2</text>
   </g>
 
   <!-- サーボのケーブル -->
@@ -220,7 +220,7 @@
   <tr><th>項目</th><th>内容</th></tr>
   <tr><td>種類</td><td>アルミ電解コンデンサ（リード線タイプ、極性あり）</td></tr>
   <tr><td>容量</td><td><b>100µF</b>（220〜470µF でもよい。大きいほど電圧の落ち込みに強い）</td></tr>
-  <tr><td>耐圧</td><td><b>16V</b>（5V の回路なので 10V 以上なら可。6.3V は余裕がないので避ける）</td></tr>
+  <tr><td>耐圧</td><td><b>16V</b>（5V の回路なので 10V 以上なら可。<b>25V・35V でもよい</b>。6.3V は余裕がないので避ける）</td></tr>
   <tr><td>数</td><td>2個（サーボ1個につき1個）</td></tr>
   <tr><td>本体の表示の例</td><td>「100µF 16V」「100 16V」など。「105℃」とあるものは長持ち</td></tr>
 </table>
