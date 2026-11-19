@@ -35,6 +35,7 @@ constexpr uint8_t kInstRead = 0x02, kInstWrite = 0x03;
 namespace detail {
 inline HardwareSerial& bus = Serial1;
 inline float panDeg = 0, tiltDeg = 0;
+inline bool enabled = false;  // enable() を呼ぶまでトルクを入れず、動かさない
 
 // 送信して、エコーを読み捨てる。replyLen > 0 なら続く返事を reply に読む
 inline bool transact(uint8_t id, uint8_t inst, const uint8_t* params, uint8_t n,
@@ -121,6 +122,7 @@ inline bool changeId(uint8_t oldId, uint8_t newId) {
 
 // 指定の角度へ ms かけて動かす（速さの上限を超える場合は自動でゆっくりにする）
 inline void look(float panDeg, float tiltDeg, uint32_t ms = 400) {
+  if (!detail::enabled) return;
   panDeg = constrain(panDeg, kPanMin, kPanMax);
   tiltDeg = constrain(tiltDeg, kTiltMin, kTiltMax);
   const uint16_t pm = detail::moveMs(detail::panDeg, panDeg, ms);
@@ -134,25 +136,36 @@ inline void look(float panDeg, float tiltDeg, uint32_t ms = 400) {
 inline float pan() { return detail::panDeg; }
 inline float tilt() { return detail::tiltDeg; }
 
-// 起動：2個のサーボを探してトルクを入れ、ゆっくり正面へ
+// 起動：2個のサーボを探して今の位置を読むだけ（トルクは入れない＝動かない）
+//  正面の位置（kPanCenter / kTiltCenter）を確かめるまでは、enable() を呼ばないこと
 inline bool begin() {
   M5.Power.setExtOutput(true);  // Port A（Grove）の 5V を出す
   detail::bus.begin(kBaud, SERIAL_8N1, kRxPin, kTxPin);
   delay(50);
   const int p1 = readPos(kPanId), p2 = readPos(kTiltId);
-  Serial.printf("neck: pan(ID%d)=%d tilt(ID%d)=%d\n", kPanId, p1, kTiltId, p2);
+  Serial.printf("neck: pan(ID%d)=%d tilt(ID%d)=%d (torque off)\n", kPanId, p1, kTiltId, p2);
+  if (p1 >= 0) detail::panDeg = kPanDir * (p1 - kPanCenter) / kUnitsPerDeg;
+  if (p2 >= 0) detail::tiltDeg = kTiltDir * (p2 - kTiltCenter) / kUnitsPerDeg;
+  return p1 >= 0 && p2 >= 0;
+}
+
+// トルクを入れて、ゆっくり（速さの上限内で）正面へ向ける
+inline void enable() {
   const uint8_t on = 1;
   detail::writeReg(kPanId, kRegTorque, &on, 1);
   delay(20);
   detail::writeReg(kTiltId, kRegTorque, &on, 1);
-  // 起動直後の位置から正面へ 1.5 秒かけて（2個を少しずらして）動かす
-  if (p1 >= 0) detail::panDeg = kPanDir * (p1 - kPanCenter) / kUnitsPerDeg;
-  if (p2 >= 0) detail::tiltDeg = kTiltDir * (p2 - kTiltCenter) / kUnitsPerDeg;
-  detail::writePos(kPanId, kPanCenter, 1500);
-  delay(200);
-  detail::writePos(kTiltId, kTiltCenter, 1500);
-  detail::panDeg = detail::tiltDeg = 0;
-  return p1 >= 0 && p2 >= 0;
+  detail::enabled = true;
+  look(0, 0, 1500);
+}
+
+// トルクを切る（手で動かせるようになる）
+inline void disable() {
+  const uint8_t off = 0;
+  detail::writeReg(kPanId, kRegTorque, &off, 1);
+  delay(20);
+  detail::writeReg(kTiltId, kRegTorque, &off, 1);
+  detail::enabled = false;
 }
 
 // ---- 決まった動き（update() を毎ループ呼ぶと進む） ----

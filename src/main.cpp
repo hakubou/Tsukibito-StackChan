@@ -3,8 +3,8 @@
 //  - 内蔵カメラで顔を検出し、その方向へ瞳を向ける（S0：カメラの試作）
 //  - 画面をタッチすると、ちび式じいの声でセリフを順に話す（口パク付き）
 //  - シリアルに s を送ると、カメラ画像を1枚 base64 で出す（デバッグ用）
-//  - 首（SCS0009×2）：シリアルのコマンドで動作確認（c 正面 / l 左 / r 右 / u 上 / b お辞儀 / n 頷き / a 見渡す / p 位置を読む）
-//    ID：i 探す / I2 つながっている1個を ID 2 に書き換える（サーボは1個だけつなぐ）
+//  - 首（SCS0009×2）：起動時は動かさない。e でトルクON（正面へ）/ d でOFF。動作確認は c 正面 / l 左 / r 右 / u 上 / b お辞儀 / n 頷き / a 見渡す / p 位置を読む）
+//    ID：i 探す / I2 つながっている1個を ID 2 に書き換える（サーボは1個だけつなぐ）/ X ID 1 と 2 を入れ替える
 //  音声: VOICEVOX:ちび式じい（tools/gen_voices.py で生成して埋め込み）
 #include <M5Unified.h>
 #include "HeianFace.h"
@@ -61,6 +61,14 @@ void idCommand(char cmd) {
   for (int i = 0; i < n; ++i) Serial.printf(" [%d]", found[i]);
   Serial.println();
   if (cmd == 'i') return;
+  if (cmd == 'X') {  // ID 1 と 2 を入れ替える（2個つないだまま。一時的に ID 3 を使う）
+    bool has1 = false, has2 = false, has3 = false;
+    for (int i = 0; i < n; ++i) { has1 |= found[i] == 1; has2 |= found[i] == 2; has3 |= found[i] == 3; }
+    if (!has1 || !has2 || has3) { Serial.println("id swap: need ID1 and ID2 connected, and no ID3"); return; }
+    const bool a = neck::changeId(1, 3), b = neck::changeId(2, 1), c = neck::changeId(3, 2);
+    Serial.printf("id swap: 1->3 %s, 2->1 %s, 3->2 %s\n", a ? "OK" : "NG", b ? "OK" : "NG", c ? "OK" : "NG");
+    return;
+  }
 
   const int newId = Serial.parseInt();  // I や F の後ろの数字
   if (newId < 1 || newId > 253) { Serial.println("id: new ID must be 1-253"); return; }
@@ -79,9 +87,11 @@ void idCommand(char cmd) {
 void handleSerial() {
   if (!Serial.available()) return;
   const char c = Serial.read();
-  if (c == 'i' || c == 'I' || c == 'F') { idCommand(c); return; }
+  if (c == 'i' || c == 'I' || c == 'F' || c == 'X') { idCommand(c); return; }
   switch (c) {
     case 's': face_sensor::dumpSnapshot(); break;
+    case 'e': neck::enable(); Serial.println("neck: torque on"); break;
+    case 'd': neck::disable(); Serial.println("neck: torque off"); break;
     case 'c': neck::look(0, 0); break;
     case 'l': neck::look(30, 0); break;
     case 'r': neck::look(-30, 0); break;
