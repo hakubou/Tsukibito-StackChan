@@ -5,6 +5,7 @@
 //    ・呼び込み：誰も遊んでいないときは 30〜60 秒おき（attract）。遊んでいる人がいるときは間をあけて、見ている人へ（watch）
 //    ・顔を見つけたら声かけ（greet）。同じ人に続けて言わないよう間をあける
 //    ・画面を撫でたら反応（pet）。触れたまま指を動かすか、0.6 秒以上触れたとき（触っていないのに出るタッチを拾わないため）
+//    ・頭（烏帽子）を撫でたら反応（pet）。CoreS3 の IMU で頭の揺れを拾う。調整するまでは切ってある（m で入/切、覚えておく）
 //    ・PC から結末が届いたら：結末のセリフ（kokoro / tashinami / nashi）→ よい歌じゃった（praise）
 //      → 刷り上がったころにプリンタの方を向いて「紙を取ってくだされ」（printed）→ お辞儀
 //  - PC とは USB シリアルでつなぐ。PC の tools/stackchan_bridge.py が、印刷プログラム（市橋さんの print_server.py）からの
@@ -12,6 +13,7 @@
 //  - シリアルの 1 文字コマンド（動作確認）：
 //    首：e トルクON / d OFF / c 正面 / h 待機の向き / l 左 / r 右 / u 上限 / k 5°上 / j 5°下 / b お辞儀 / n 頷き / a 見渡す / p 位置を読む
 //    接客の試し：0 遊び始め / 1 結末 kokoro / 2 tashinami / 3 nashi / 7 撫でた / 8 声かけ / 9 呼び込み
+//    頭を撫でる（IMU）：m 入/切 / g 15秒間 揺れの大きさを表示 / > < 反応する揺れの大きさを上げ下げ（どれも覚えておく）
 //    音量：+ / -（覚えておく）　カメラ：s 画像を1枚 base64 で出す
 //    ID：i 探す / I2 つながっている1個を ID 2 に書き換える（サーボは1個だけつなぐ）/ X ID 1 と 2 を入れ替える
 //  音声: VOICEVOX:ちび式じい（voice/phrases.json → tools/gen_voices.py で生成して埋め込み）
@@ -130,6 +132,7 @@ void onPet();
 void greetNow();
 void attractNow();
 bool attendantHoldsNeck();
+void imuCommand(char c);
 
 // シリアルの1文字コマンド（首の動作確認・接客の試し・ID書き換え・カメラ画像の取り出し）
 void command(char c) {
@@ -158,6 +161,7 @@ void command(char c) {
     case '7': onPet(); break;
     case '8': greetNow(); break;
     case '9': attractNow(); break;
+    case 'm': case 'g': case '>': case '<': imuCommand(c); break;
     case '+': changeVolume(+20); break;
     case '-': changeVolume(-20); break;
   }
@@ -346,6 +350,68 @@ void checkPet() {
   }
 }
 
+// ---- 頭を撫でた（IMU）----
+//  CoreS3 そのものが頭なので、烏帽子や頭を撫でると頭が小さく揺れる。それをジャイロ（角速度）で拾う。
+//  首を動かしている間・話している間（スピーカーの振動）と、その直後は見ない。
+//  kImuHits 回以上、kImuWindowMs の間に揺れが閾値を超えたら「撫でた」
+constexpr uint32_t kImuWindowMs = 1000;
+constexpr int kImuHits = 4;
+constexpr uint32_t kImuSettleMs = 400;  // 首の動き・声が終わってから、これだけは見ない
+bool imuPet = false;      // 調整するまでは切っておく（m で入れる）
+float imuThreshold = 20;  // 反応する揺れの大きさ（°/秒）
+uint32_t imuMonitorUntil = 0;
+
+void imuCommand(char c) {
+  if (c == 'm') { imuPet = !imuPet; prefs.putBool("imupet", imuPet); }
+  if (c == '>') { imuThreshold += 5; prefs.putFloat("imuthr", imuThreshold); }
+  if (c == '<') { imuThreshold = std::max(5.0f, imuThreshold - 5); prefs.putFloat("imuthr", imuThreshold); }
+  if (c == 'g') imuMonitorUntil = millis() + 15000;
+  Serial.printf("imu pet: %s, threshold %.0f deg/s%s\n", imuPet ? "ON" : "off", imuThreshold,
+                M5.Imu.isEnabled() ? "" : " (IMU not found)");
+}
+
+void loadImuSettings() {
+  imuPet = prefs.getBool("imupet", false);
+  imuThreshold = prefs.getFloat("imuthr", imuThreshold);
+  Serial.printf("imu pet: %s, threshold %.0f deg/s%s\n", imuPet ? "ON" : "off", imuThreshold,
+                M5.Imu.isEnabled() ? "" : " (IMU not found)");
+}
+
+void checkHeadPet() {
+  const uint32_t now = millis();
+  const bool monitor = now < imuMonitorUntil;
+  if ((!imuPet && !monitor) || !M5.Imu.isEnabled()) return;
+  static uint32_t lastAt = 0, quietUntil = 0, windowAt = 0, peakAt = 0;
+  static int hits = 0;
+  static float peak = 0;
+  if (now - lastAt < 20) return;
+  lastAt = now;
+  float gx, gy, gz;
+  if (!M5.Imu.getGyro(&gx, &gy, &gz)) return;
+  const float mag = sqrtf(gx * gx + gy * gy + gz * gz);
+  if (neck::moving() || talking()) quietUntil = now + kImuSettleMs;
+  const bool ignored = now < quietUntil;
+
+  if (monitor) {  // 0.5 秒ごとに、その間の一番大きな揺れを出す（撫でたとき・何もしないときの値を見て閾値を決める）
+    if (!ignored) peak = std::max(peak, mag);
+    if (now - peakAt >= 500) {
+      Serial.printf("imu: %5.1f deg/s%s\n", peak, ignored ? " (neck moving / talking)" : "");
+      peak = 0;
+      peakAt = now;
+    }
+  }
+  if (ignored || !imuPet) { hits = 0; return; }
+  if (hits && now - windowAt > kImuWindowMs) hits = 0;
+  if (mag > imuThreshold) {
+    if (!hits) windowAt = now;
+    if (++hits >= kImuHits) {
+      hits = 0;
+      Serial.printf("pet (head) %.0f deg/s\n", mag);
+      onPet();
+    }
+  }
+}
+
 // 結末の流れを1段ずつ進める（セリフが終わるのを待って次へ）
 void updateEnding() {
   const uint32_t now = millis();
@@ -387,6 +453,7 @@ void updateEnding() {
 void updateAttendant() {
   const uint32_t now = millis();
   checkPet();
+  checkHeadPet();
   updateEnding();
 
   // 顔の出入り
@@ -449,6 +516,7 @@ void setup() {
     Serial.println("neck: servo not found");
   }
   delay(500);
+  loadImuSettings();
   randomSeed(esp_random());
   speakCategory("greet");
   lastGreetAt = millis();

@@ -39,6 +39,7 @@ namespace detail {
 inline HardwareSerial& bus = Serial1;
 inline float panDeg = 0, tiltDeg = 0;
 inline bool enabled = false;  // enable() を呼ぶまでトルクを入れず、動かさない
+inline uint32_t moveUntil = 0;  // 最後に指示した動きが終わる時刻
 
 // 送信して、エコーを読み捨てる。replyLen > 0 なら続く返事を reply に読む
 inline bool transact(uint8_t id, uint8_t inst, const uint8_t* params, uint8_t n,
@@ -134,6 +135,7 @@ inline void look(float panDeg, float tiltDeg, uint32_t ms = 400) {
   detail::writePos(kTiltId, kTiltCenter + (int)(kTiltDir * tiltDeg * kUnitsPerDeg), tm);
   detail::panDeg = panDeg;
   detail::tiltDeg = tiltDeg;
+  detail::moveUntil = millis() + std::max(pm, tm);
 }
 
 inline bool isEnabled() { return detail::enabled; }
@@ -190,6 +192,8 @@ inline void play(Motion m) {
   detail::baseTilt = detail::tiltDeg;
 }
 inline bool busy() { return detail::motion != Motion::None; }
+// 首が動いている最中か（決まった動きの途中、または最後の動きが終わっていない）
+inline bool moving() { return detail::motion != Motion::None || millis() < detail::moveUntil; }
 inline void stop() { detail::motion = Motion::None; }  // 決まった動きを途中でやめる（首はその場で止まる）
 
 inline void update() {
