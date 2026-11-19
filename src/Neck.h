@@ -21,7 +21,7 @@ constexpr int kPanDir = 1, kTiltDir = 1;
 constexpr float kPanMin = -40, kPanMax = 40;
 constexpr float kTiltMin = -10, kTiltMax = 30;
 // 正面の位置（0〜1023）。組み付けのずれはここで直す
-constexpr int kPanCenter = 512, kTiltCenter = 512;
+constexpr int kPanCenter = 539, kTiltCenter = 526;  // 組み立て後に手で正面・水平に合わせて読んだ値（2026-11-19）
 
 constexpr float kUnitsPerDeg = 1024.0f / 300.0f;  // SCS0009：300°で 0〜1023
 constexpr uint32_t kMinMoveMs = 250;              // どんな小さな動きでもこれ以上かける
