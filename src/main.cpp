@@ -1,9 +1,9 @@
 // 平安俳句ｽﾀｯｸﾁｬﾝ
 //  - 平安顔（引目鉤鼻・置眉）を表示する（HeianFace.h の独自描画）
-//  - 内蔵カメラで顔を検出し、その方向へ瞳を向ける（S0：カメラの試作）
+//  - 内蔵カメラで顔を検出し、首と瞳をその顔へ向ける（顔追従。シリアルの t でON/OFF）
 //  - 画面をタッチすると、ちび式じいの声でセリフを順に話す（口パク付き）
 //  - シリアルに s を送ると、カメラ画像を1枚 base64 で出す（デバッグ用）
-//  - 首（SCS0009×2）：起動時は動かさない。e でトルクON（正面へ）/ d でOFF。動作確認は c 正面 / l 左 / r 右 / u 上 / b お辞儀 / n 頷き / a 見渡す / p 位置を読む）
+//  - 首（SCS0009×2）：起動時にトルクを入れてゆっくり正面へ。e でトルクON / d でOFF。動作確認は c 正面 / l 左 / r 右 / u 上 / b お辞儀 / n 頷き / a 見渡す / p 位置を読む）
 //    ID：i 探す / I2 つながっている1個を ID 2 に書き換える（サーボは1個だけつなぐ）/ X ID 1 と 2 を入れ替える
 //  音声: VOICEVOX:ちび式じい（tools/gen_voices.py で生成して埋め込み）
 #include <M5Unified.h>
@@ -16,8 +16,16 @@
 extern const uint8_t voicesStart[] asm("_binary_assets_voices_bin_start");
 extern const uint8_t voicesEnd[] asm("_binary_assets_voices_bin_end");
 
-// カメラ画像の左右が鏡像かどうか（顔を追う向きが逆なら true/false を入れ替える）
+// カメラ画像の左右が鏡像かどうか（顔から逃げるように首が回るなら true/false を入れ替える）
 constexpr bool kCameraMirrored = false;
+
+// ---- 顔追従の設定 ----
+constexpr float kCamHFovDeg = 60, kCamVFovDeg = 45;  // カメラ（GC0308）の画角の目安
+constexpr float kTrackGain = 0.6f;     // 1回でずれの何割ぶん首を回すか（大きいと速いが行き過ぎやすい）
+constexpr float kTrackDeadband = 0.08f;  // 顔が画像の中心からこの割合以内なら首は動かさない
+constexpr uint32_t kTrackMoveMs = 250;   // 1回の首の動きにかける時間
+constexpr uint32_t kReturnAfterMs = 3000;  // 顔を見失ってから正面に戻るまで
+bool tracking = true;
 
 heian::Renderer face;
 const int16_t* pcm = nullptr;  // 全セリフの PCM（2バイト境界にそろえたもの）
@@ -99,6 +107,7 @@ void handleSerial() {
     case 'b': neck::play(neck::Motion::Bow); break;
     case 'n': neck::play(neck::Motion::Nod); break;
     case 'a': neck::play(neck::Motion::LookAround); break;
+    case 't': tracking = !tracking; Serial.printf("tracking: %s\n", tracking ? "on" : "off"); if (!tracking) neck::look(0, 0, 1000); break;
     case 'p': Serial.printf("neck pos: pan=%d tilt=%d\n", neck::readPos(neck::kPanId), neck::readPos(neck::kTiltId)); break;
   }
 }
@@ -116,15 +125,44 @@ float mouthFromVoice() {
   return std::min(1.0f, level);
 }
 
-// 見つけた顔の方へ瞳を向ける。見失って 1.5 秒たったら自動のきょろきょろに戻す
-void followFace() {
+// 顔追従：見つけた顔が画像の中心に来るように首を回し、瞳もその顔へ向ける
+//  - カメラは頭に付いているので、首が動いている最中の画像はぶれる。首が止まってから撮った画像だけを使う
+//  - 顔を見失って kReturnAfterMs たったら、ゆっくり正面に戻る
+void trackFace() {
+  static uint32_t lastFrame = 0, settleUntil = 0, lostAt = 0;
+  static bool atHome = true;
   const auto f = face_sensor::get();
-  if (f.count > 0 && millis() - f.atMs < 1500) {
-    float gx = (f.x - 160) / 160.0f;
-    if (!kCameraMirrored) gx = -gx;  // 画像の左＝ロボットの左＝画面の右
-    face.lookAt(gx, (f.y - 120) / 120.0f, true);
-  } else {
-    face.lookAt(0, 0, false);
+  const uint32_t now = millis();
+  const bool seen = f.count > 0 && now - f.atMs < 1500;
+
+  // 画像の中心からのずれ（-1〜1）。ex は +でロボットの右、ey は +で下
+  float ex = 0, ey = 0;
+  if (seen) {
+    ex = (f.x - 160) / 160.0f;
+    ey = (f.y - 120) / 120.0f;
+    if (kCameraMirrored) ex = -ex;
+  }
+  // 瞳：画面の右＝ロボットの左なので、左右を反転して渡す
+  face.lookAt(-ex, ey, seen);
+
+  if (!tracking || !neck::isEnabled() || neck::busy()) return;
+  if (seen) {
+    atHome = false;
+    lostAt = now;
+    const uint32_t shotAt = f.atMs - f.detectMs;  // おおよその撮影時刻
+    if (f.frames == lastFrame || shotAt < settleUntil) return;
+    lastFrame = f.frames;
+    if (fabsf(ex) < kTrackDeadband) ex = 0;
+    if (fabsf(ey) < kTrackDeadband) ey = 0;
+    if (ex == 0 && ey == 0) return;
+    // パンは +で左、チルトは +で下（Neck.h）
+    const float pan = neck::pan() - ex * kCamHFovDeg / 2 * kTrackGain;
+    const float tilt = neck::tilt() + ey * kCamVFovDeg / 2 * kTrackGain;
+    neck::look(pan, tilt, kTrackMoveMs);
+    settleUntil = now + kTrackMoveMs + 80;
+  } else if (!atHome && now - lostAt > kReturnAfterMs) {
+    neck::look(0, 0, 1500);
+    atHome = true;
   }
 }
 
@@ -158,7 +196,12 @@ void setup() {
   const bool cam = false;
 #endif
   Serial.printf("camera: %s\n", cam ? "ok" : "NG");
-  Serial.printf("neck: %s\n", neck::begin() ? "ok" : "servo not found");
+  if (neck::begin()) {
+    neck::enable();  // 正面の位置は調整済みなので、起動時にゆっくり正面へ向ける
+    Serial.println("neck: ok (torque on)");
+  } else {
+    Serial.println("neck: servo not found");
+  }
   delay(500);
   clipIndex = 0;
   speak(clipIndex);
@@ -167,7 +210,7 @@ void setup() {
 void loop() {
   M5.update();
   reportStats();
-  followFace();
+  trackFace();
 
   handleSerial();
   neck::update();

@@ -133,6 +133,7 @@ inline void look(float panDeg, float tiltDeg, uint32_t ms = 400) {
   detail::tiltDeg = tiltDeg;
 }
 
+inline bool isEnabled() { return detail::enabled; }
 inline float pan() { return detail::panDeg; }
 inline float tilt() { return detail::tiltDeg; }
 
