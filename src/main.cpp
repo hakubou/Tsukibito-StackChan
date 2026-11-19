@@ -17,7 +17,7 @@ extern const uint8_t voicesStart[] asm("_binary_assets_voices_bin_start");
 extern const uint8_t voicesEnd[] asm("_binary_assets_voices_bin_end");
 
 // カメラ画像の左右が鏡像かどうか（顔から逃げるように首が回るなら true/false を入れ替える）
-constexpr bool kCameraMirrored = false;
+constexpr bool kCameraMirrored = true;  // 実機で確認（2026-11-19）：画像は左右が鏡像
 
 // ---- 顔追従の設定 ----
 constexpr float kCamHFovDeg = 60, kCamVFovDeg = 45;  // カメラ（GC0308）の画角の目安
@@ -160,6 +160,7 @@ void trackFace() {
     const float tilt = neck::tilt() + ey * kCamVFovDeg / 2 * kTrackGain;
     neck::look(pan, tilt, kTrackMoveMs);
     settleUntil = now + kTrackMoveMs + 80;
+    Serial.printf("track: face(%d,%d) ex=%+.2f ey=%+.2f -> pan %+.0f tilt %+.0f\n", f.x, f.y, ex, ey, neck::pan(), neck::tilt());
   } else if (!atHome && now - lostAt > kReturnAfterMs) {
     neck::look(0, 0, 1500);
     atHome = true;
