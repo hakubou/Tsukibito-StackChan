@@ -16,7 +16,7 @@ constexpr uint32_t kBaud = 1000000;
 constexpr uint8_t kPanId = 1, kTiltId = 2;
 
 // 向きが逆だったら -1 にする
-constexpr int kPanDir = 1, kTiltDir = 1;
+constexpr int kPanDir = -1, kTiltDir = -1;  // 実機で確認済み（2026-11-19：左右・上下とも逆だった）
 // 可動範囲（度）。筐体や烏帽子が当たらない範囲に絞る
 constexpr float kPanMin = -40, kPanMax = 40;
 constexpr float kTiltMin = -10, kTiltMax = 30;
