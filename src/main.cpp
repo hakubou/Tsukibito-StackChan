@@ -103,11 +103,15 @@ void handleSerial() {
     case 'c': neck::look(0, 0); break;
     case 'l': neck::look(30, 0); break;
     case 'r': neck::look(-30, 0); break;
-    case 'u': neck::look(0, -10); break;
+    case 'h': neck::look(neck::kHomePan, neck::kHomeTilt); break;
+    case 'u': neck::look(0, neck::kTiltMin, 1000); break;
+    // 上下を 5° ずつ動かして、筐体に当たらない上限を探す
+    case 'k': neck::look(neck::pan(), neck::tilt() - 5); Serial.printf("neck: tilt %+.0f\n", neck::tilt()); break;
+    case 'j': neck::look(neck::pan(), neck::tilt() + 5); Serial.printf("neck: tilt %+.0f\n", neck::tilt()); break;
     case 'b': neck::play(neck::Motion::Bow); break;
     case 'n': neck::play(neck::Motion::Nod); break;
     case 'a': neck::play(neck::Motion::LookAround); break;
-    case 't': tracking = !tracking; Serial.printf("tracking: %s\n", tracking ? "on" : "off"); if (!tracking) neck::look(0, 0, 1000); break;
+    case 't': tracking = !tracking; Serial.printf("tracking: %s\n", tracking ? "on" : "off"); if (!tracking) neck::look(neck::kHomePan, neck::kHomeTilt, 1000); break;
     case 'p': Serial.printf("neck pos: pan=%d tilt=%d\n", neck::readPos(neck::kPanId), neck::readPos(neck::kTiltId)); break;
   }
 }
@@ -127,7 +131,7 @@ float mouthFromVoice() {
 
 // 顔追従：見つけた顔が画像の中心に来るように首を回し、瞳もその顔へ向ける
 //  - カメラは頭に付いているので、首が動いている最中の画像はぶれる。首が止まってから撮った画像だけを使う
-//  - 顔を見失って kReturnAfterMs たったら、ゆっくり正面に戻る
+//  - 顔を見失って kReturnAfterMs たったら、ゆっくり待機の向き（正面・少し上）に戻る
 void trackFace() {
   static uint32_t lastFrame = 0, settleUntil = 0, lostAt = 0;
   static bool atHome = true;
@@ -162,7 +166,7 @@ void trackFace() {
     settleUntil = now + kTrackMoveMs + 80;
     Serial.printf("track: face(%d,%d) ex=%+.2f ey=%+.2f -> pan %+.0f tilt %+.0f\n", f.x, f.y, ex, ey, neck::pan(), neck::tilt());
   } else if (!atHome && now - lostAt > kReturnAfterMs) {
-    neck::look(0, 0, 1500);
+    neck::look(neck::kHomePan, neck::kHomeTilt, 1500);
     atHome = true;
   }
 }

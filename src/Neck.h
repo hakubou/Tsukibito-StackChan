@@ -19,7 +19,10 @@ constexpr uint8_t kPanId = 1, kTiltId = 2;
 constexpr int kPanDir = -1, kTiltDir = -1;  // 実機で確認済み（2026-11-19：左右・上下とも逆だった）
 // 可動範囲（度）。筐体や烏帽子が当たらない範囲に絞る
 constexpr float kPanMin = -40, kPanMax = 40;
-constexpr float kTiltMin = -10, kTiltMax = 30;
+//  チルトの上限：お客さんは立っているので、見上げられるよう -30°（上）まで。筐体に当たるなら縮める
+constexpr float kTiltMin = -30, kTiltMax = 30;
+// 待機時の向き（顔を探すとき）：立っている人の顔が画角に入るよう、少し上を向いておく
+constexpr float kHomePan = 0, kHomeTilt = -10;
 // 正面の位置（0〜1023）。組み付けのずれはここで直す
 constexpr int kPanCenter = 539, kTiltCenter = 526;  // 組み立て後に手で正面・水平に合わせて読んだ値（2026-11-19）
 
@@ -150,14 +153,14 @@ inline bool begin() {
   return p1 >= 0 && p2 >= 0;
 }
 
-// トルクを入れて、ゆっくり（速さの上限内で）正面へ向ける
+// トルクを入れて、ゆっくり（速さの上限内で）待機の向きへ向ける
 inline void enable() {
   const uint8_t on = 1;
   detail::writeReg(kPanId, kRegTorque, &on, 1);
   delay(20);
   detail::writeReg(kTiltId, kRegTorque, &on, 1);
   detail::enabled = true;
-  look(0, 0, 1500);
+  look(kHomePan, kHomeTilt, 1500);
 }
 
 // トルクを切る（手で動かせるようになる）
